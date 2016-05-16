@@ -106,10 +106,18 @@ var HITSPERPAGE = 20;
         data:{
           q:q,
           wt:"json",
+          hl:true,
+          'hl.snippets':5,
+          'hl.fl':"*",
+          'hl.usePhraseHighlighter':true,
+
+          //&hl.snippets=20&hl.fl=content&hl.usePhraseHighlighter=true
           //http://localhost:8983/solr/techproducts/select?q=inStock:false&wt=json&fl=id,name
         },
       success: function(result) {
-        console.log(result);
+        console.log(result.highlighting);
+        var docs = JSON.stringify(result.highlighting);
+        var jsonData = JSON.parse(docs);
         if (result.response.docs.length > 0) {
           if (offset == 0) {
             rs.empty();
@@ -117,8 +125,8 @@ var HITSPERPAGE = 20;
             rs.siblings().remove();
           }
           for (var i = 0; i < result.response.docs.length; i++) {
-            console.log(result.response.docs[i]);
-            rs.append(hitTemplate({id: result.response.docs[i]["id"],title: result.response.docs[i]["title"], text: result.response.docs[i]["content"].substring(0,300)}));
+            //console.log(result.response.docs[i]["id"]);
+            rs.append(hitTemplate({id: result.response.docs[i]["id"],title: result.response.docs[i]["title"], text: (result.highlighting[result.response.docs[0]["id"]]["content"]).join('')}));
           }
           $(rs).parent().css({ opacity: 1 });
           //if more results to come- set up the autoload div
