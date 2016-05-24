@@ -7,22 +7,15 @@ var HITBODY = 'text';                                          //Name of the bod
 var HITSPERPAGE = 20;
 
 
-function getURL(json,localURL) {
-  return json.filter(
-      function(json){return json.Filename == localURL}
-  );
-}
+  function getURL(json,localURL) {
+    return json.filter(
+        function(json){return json.Filename == localURL}
+    );
+  }
 
-String.prototype.capitalize = function() {
-    return this.charAt(0).toUpperCase() + this.slice(1);
-}
-
-/*$(document).on('load', function(){
-  //make sure # not being included in url
-  console.log('test');
-  var url = (window.location.href).split("#").join('');
-  location.replace(url);
-});*/
+  String.prototype.capitalize = function() {
+      return this.charAt(0).toUpperCase() + this.slice(1);
+  }
 
   $(window).load(function() {
     console.log( "window loaded" );
@@ -31,6 +24,19 @@ String.prototype.capitalize = function() {
       location.replace(url);
     }
   });
+
+  function checkParams(key){
+    var params = getURLParam('q').split(' ');
+
+    var res = false;
+    for(var param_key in params){
+      if(params[param_key] == key){
+        res = true;
+        console.log("match");
+      }
+    }
+    return res;
+  }
 
 
 //when the page is loaded- do this
@@ -196,20 +202,23 @@ String.prototype.capitalize = function() {
       success: function(result) {
         console.log(result);
         $("ul.nav-sidebar").empty();
-        //$("ul.languages").append("<li class='header'><a style='color:black'>Languages</a></li>");
+        $("ul.languages").append("<li class='header'><a style='color:black'>Languages</a></li>");
         var facetTemplate = Handlebars.compile($("#facet-template").html());
         for(var key in result.facet_counts.facet_queries){
-          console.log(getURLParam('q'), key);
-          if(!(getURLParam('q').includes(key))){
-            if("php jquery javascript css html java python c ruby c++".includes(key))
-              $("ul.languages").append(facetTemplate({facet:key,title:key,count:result.facet_counts.facet_queries[key]}));
-            else if("tutorial examples reference".includes(key))
-              $("ul.tutorials-ex-reference").append(facetTemplate({facet:key,title:key.capitalize(),count:result.facet_counts.facet_queries[key]}));
-            else if("interview" == key)
-              $("ul.interview").append(facetTemplate({facet:key,title:key.capitalize(),count:result.facet_counts.facet_queries[key]}));
-            else if("homework" == key)
-              $("ul.homework").append(facetTemplate({facet:key,title:key.capitalize(),count:result.facet_counts.facet_queries[key]}));
-          }
+
+          //look at exact matches
+
+            if(!(checkParams(key))){
+              if("php jquery javascript css html java python c ruby c++".includes(key))
+                $("ul.languages").append(facetTemplate({facet:key,title:key,count:result.facet_counts.facet_queries[key]}));
+              else if("tutorial examples reference".includes(key))
+                $("ul.tutorials-ex-reference").append(facetTemplate({facet:key,title:key.capitalize(),count:result.facet_counts.facet_queries[key]}));
+              else if("interview" == key)
+                $("ul.interview").append(facetTemplate({facet:key,title:key.capitalize(),count:result.facet_counts.facet_queries[key]}));
+              else if("homework" == key)
+                $("ul.homework").append(facetTemplate({facet:key,title:key.capitalize(),count:result.facet_counts.facet_queries[key]}));
+            }
+
         }
 
         var docs = JSON.stringify(result.highlighting);
