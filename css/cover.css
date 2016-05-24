@@ -2,14 +2,10 @@
  * Globals
  */
 
- .cover .navbar-form, .cover .navbar-form .form-control{
-   width:100%;
- }
-
 /* Links */
-.cover a,
-.cover a:focus,
-.cover a:hover {
+a,
+a:focus,
+a:hover {
   color: #fff;
 }
 
@@ -29,11 +25,11 @@
  */
 
 html,
-body #main{
+body {
   height: 100%;
   background-color: #333;
 }
-body #main{
+body {
   color: #fff;
   text-align: center;
   text-shadow: 0 1px 3px rgba(0,0,0,.5);

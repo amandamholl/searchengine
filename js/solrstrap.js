@@ -32,10 +32,35 @@ var HITSPERPAGE = 20;
     for(var param_key in params){
       if(params[param_key] == key){
         res = true;
-        console.log("match");
+        //console.log("match");
       }
     }
     return res;
+  }
+
+  function logNewQuery(urlParams){
+    console.log(urlParams);
+    if(window.sessionStorage.getItem("queries")===null){
+      window.sessionStorage.setItem("totalQueries", 1);
+      var queries = new Array();
+      queries.push({
+        query: urlParams,
+        clicks:new Array(),
+      })
+      console.log(queries);
+      //queries[window.sessionStorage.setItem("totalQueries") - 1][getURLParam('q')] = new Array();
+      window.sessionStorage.setItem("queries",JSON.stringify(queries));
+    }
+    else{
+      window.sessionStorage.setItem("totalQueries", parseInt(window.sessionStorage.getItem("totalQueries"))+1);
+      var queries = JSON.parse(window.sessionStorage.getItem("queries"));
+      queries.push({
+        query: urlParams,
+        clicks:new Array(),
+      })
+      //queries[window.sessionStorage.setItem("totalQueries") - 1][getURLParam('q')] = new Array();
+      window.sessionStorage.setItem("queries",JSON.stringify(queries));
+    }
   }
 
 
@@ -51,12 +76,20 @@ var HITSPERPAGE = 20;
 //when the searchbox is typed- do this
   $('#searchbox').keyup(function() {
     if ($(this).val().length > 3) {
-      $('div[offset="0"]').loadSolrResults($(this).val(), Handlebars.compile($("#hit-template").html()), Handlebars.compile($("#result-summary-template").html()), 0);
+      //$('div[offset="0"]').loadSolrResults($(this).val(), Handlebars.compile($("#hit-template").html()), Handlebars.compile($("#result-summary-template").html()), 0);
     }
     else {
       $('#rs').css({ opacity: 0.5 });
     }
   });
+
+
+  $('#start').on('click', function(){
+    if(window.sessionStorage.getItem("start")===null){
+      window.sessionStorage.setItem("start",Date());
+    }
+  });
+
 
   //when a facet link is clicked, issue another query
   $(document).on('click','a.facet',function(event){
@@ -69,9 +102,12 @@ var HITSPERPAGE = 20;
         url = url+"+AND+"+"c%2B%2B";
       else
         url = url+"+AND+"+$(this).attr('id');
-      console.log(url);
+      //console.log(url);
 
       location.replace(url);
+
+      logNewQuery(getURLParam('q')+" AND "+$(this).attr('id'));
+
       //$('div[offset="0"]').loadSolrResults(($('#searchbox').val()).concat($(this).attr('id')), Handlebars.compile($("#hit-template").html()), Handlebars.compile($("#result-summary-template").html()), 0);
     }
     else {
@@ -90,36 +126,17 @@ var HITSPERPAGE = 20;
     window.sessionStorage.setItem("queries", JSON.stringify(queries));
     console.log(queries);
 
+    if(window.sessionStorage.getItem("totalClicks")===null){
+      window.sessionStorage.setItem("totalClicks",1);
+    }
+    else {
+      window.sessionStorage.setItem("totalClicks",parseInt(window.sessionStorage.getItem("totalClicks"))+1);
+    }
   });
 
   $("#searchbox").keyup(function(event){
     if(event.keyCode == 13){
-      if(window.sessionStorage.getItem("start")===null){
-        window.sessionStorage.setItem("start",Date());
-      }
-
-      if(window.sessionStorage.getItem("queries")===null){
-        window.sessionStorage.setItem("totalQueries", 1);
-        var queries = new Array();
-        queries.push({
-          query: getURLParam('q'),
-          clicks:new Array(),
-        })
-        console.log(queries);
-        //queries[window.sessionStorage.setItem("totalQueries") - 1][getURLParam('q')] = new Array();
-        window.sessionStorage.setItem("queries",JSON.stringify(queries));
-      }
-      else{
-        window.sessionStorage.setItem("totalQueries", parseInt(window.sessionStorage.getItem("totalQueries"))+1);
-        var queries = JSON.parse(window.sessionStorage.getItem("queries"));
-        queries.push({
-          query: getURLParam('q'),
-          clicks:new Array(),
-        })
-        console.log(queries);
-        //queries[window.sessionStorage.setItem("totalQueries") - 1][getURLParam('q')] = new Array();
-        window.sessionStorage.setItem("queries",JSON.stringify(queries));
-      }
+      logNewQuery(getURLParam('q'));
     }
     //console.log(window.sessionStorage.getItem("clicks") );
   });
@@ -127,21 +144,21 @@ var HITSPERPAGE = 20;
   $("#end").click(function(){
     window.sessionStorage.setItem("end",Date());
     console.log(window.sessionStorage);
+
+    // Build nice looking session object
+    var sessionLog = new Object();
+    sessionLog.startedAt = window.sessionStorage.getItem("start");
+    sessionLog.endedAt = window.sessionStorage.getItem("end");
+    sessionLog.duration = ((new Date(sessionLog.endedAt)).getTime() - (new Date(sessionLog.startedAt)).getTime())/1000;
+    sessionLog.queries = JSON.parse(window.sessionStorage.getItem("queries"));
+    sessionLog.totalClicks = window.sessionStorage.getItem("totalClicks");
+    sessionLog.totalQueries = window.sessionStorage.getItem("totalQueries");
+
     //begin building session data to log
-    var url = 'data:text/json;charset=utf8,' + encodeURIComponent(JSON.stringify(window.sessionStorage));
+    var url = 'data:text/json;charset=utf8,' + encodeURIComponent(JSON.stringify(sessionLog));
     window.open(url, '_blank');
     window.focus();
     window.sessionStorage.clear();
-  });
-
-  $('.cover #searchbox').keyup(function() {
-    if ($(this).val().length > 3) {
-      $('body').addClass("padding");
-      $('div[offset="0"]').loadSolrResults($(this).val(), Handlebars.compile($("#result-template").html()),Handlebars.compile($("#hit-template").html()), Handlebars.compile($("#result-summary-template").html()), 0);
-    }
-    else {
-      $('#rs').css({ opacity: 0.5 });
-    }
   });
 
   //jquery plugin allows resultsets to be painted onto any div.
@@ -180,7 +197,7 @@ var HITSPERPAGE = 20;
       console.log('here');
       $(rs).parent().css({ opacity: 0.5 });
       $.ajax({
-        url : 'http://localhost:8983/solr/files/select?q='+q+'&wt=json&facet=true&facet.query=c&facet.query=c%2B%2B&facet.query=css&facet.query=java&facet.query=javascript&facet.query=jquery&facet.query=php&facet.query=python&facet.query=ruby&facet.query=interview&facet.query=homework&facet.query=examples&facet.query=tutorial&facet.query=reference',
+        url : 'http://localhost:8983/solr/files/select?q='+q+'&wt=json&facet=true&facet.query=c&facet.query=c%2B%2B&facet.query=html&facet.query=java&facet.query=javascript&facet.query=jquery&facet.query=php&facet.query=python&facet.query=ruby&facet.query=interview&facet.query=homework&facet.query=examples&facet.query=tutorial&facet.query=reference',
         type: "GET",
         dataType: "jsonp",
         jsonp : 'json.wrf',
@@ -202,22 +219,23 @@ var HITSPERPAGE = 20;
       success: function(result) {
         console.log(result);
         $("ul.nav-sidebar").empty();
-        $("ul.languages").append("<li class='header'><a style='color:black'>Languages</a></li>");
+        if(getURLParam('q')!="")
+          $("ul.languages").append("<li class='header'><a style='color:black'>Languages</a></li>");
         var facetTemplate = Handlebars.compile($("#facet-template").html());
         for(var key in result.facet_counts.facet_queries){
 
           //look at exact matches
 
-            if(!(checkParams(key))){
-              if("php jquery javascript css html java python c ruby c++".includes(key))
-                $("ul.languages").append(facetTemplate({facet:key,title:key,count:result.facet_counts.facet_queries[key]}));
-              else if("tutorial examples reference".includes(key))
-                $("ul.tutorials-ex-reference").append(facetTemplate({facet:key,title:key.capitalize(),count:result.facet_counts.facet_queries[key]}));
-              else if("interview" == key)
-                $("ul.interview").append(facetTemplate({facet:key,title:key.capitalize(),count:result.facet_counts.facet_queries[key]}));
-              else if("homework" == key)
-                $("ul.homework").append(facetTemplate({facet:key,title:key.capitalize(),count:result.facet_counts.facet_queries[key]}));
-            }
+          if(getURLParam('q')!="" && !(checkParams(key))){
+            if("php jquery javascript css html java python c ruby c++".includes(key))
+              $("ul.languages").append(facetTemplate({facet:key,title:key,count:result.facet_counts.facet_queries[key]}));
+            else if("tutorial examples reference".includes(key))
+              $("ul.tutorials-ex-reference").append(facetTemplate({facet:key,title:key.capitalize(),count:result.facet_counts.facet_queries[key]}));
+            else if("interview" == key)
+              $("ul.interview").append(facetTemplate({facet:key,title:key.capitalize(),count:result.facet_counts.facet_queries[key]}));
+            else if("homework" == key)
+              $("ul.homework").append(facetTemplate({facet:key,title:key.capitalize(),count:result.facet_counts.facet_queries[key]}));
+          }
 
         }
 
@@ -243,7 +261,7 @@ var HITSPERPAGE = 20;
                 text = text.replace(/&lt;strong&gt;/g,"<strong>").replace(/&lt;\/strong&gt;/g,"</strong>");
               }
               else if(!highlightedContent && highlightedCode){
-                console.log(highlightedCode);
+                //console.log(highlightedCode);
                 //merge but then remove html characters so its rendered as a string and not html code
                 //remove any unsafe html(escape the string)
                 text = highlightedCode.join('').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
@@ -292,6 +310,9 @@ var HITSPERPAGE = 20;
             rs.parent().append(nextDiv);
             $(nextDiv).loadSolrResultsWhenVisible(q, hitTemplate, summaryTemplate, +HITSPERPAGE+offset);
           }
+        }
+        else{
+          rs.append("<p> No results found. Please try another query. </p>.");
         }
       },
       error: function(result) { console.log("Error"); },
