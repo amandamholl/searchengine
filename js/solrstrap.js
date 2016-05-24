@@ -17,6 +17,21 @@ String.prototype.capitalize = function() {
     return this.charAt(0).toUpperCase() + this.slice(1);
 }
 
+/*$(document).on('load', function(){
+  //make sure # not being included in url
+  console.log('test');
+  var url = (window.location.href).split("#").join('');
+  location.replace(url);
+});*/
+
+  $(window).load(function() {
+    console.log( "window loaded" );
+    if((window.location.href).includes("#")){
+      var url = (window.location.href).split("#").join('');
+      location.replace(url);
+    }
+  });
+
 
 //when the page is loaded- do this
   $(document).on('ready',function(event) {
@@ -43,7 +58,11 @@ String.prototype.capitalize = function() {
 
     if ($('#searchbox').val().length > 3) {
       //strip # if this is at the end of window.location.href
-      var url = window.location.href+"+AND+"+$(this).attr('id');
+      var url = (window.location.href).split("#").join('');
+      if($(this).attr('id') == "c++")
+        url = url+"+AND+"+"c%2B%2B";
+      else
+        url = url+"+AND+"+$(this).attr('id');
       console.log(url);
 
       location.replace(url);
@@ -155,7 +174,7 @@ String.prototype.capitalize = function() {
       console.log('here');
       $(rs).parent().css({ opacity: 0.5 });
       $.ajax({
-        url : 'http://localhost:8983/solr/files/select?q='+q+'&wt=json&facet=true&facet.query=php&facet.query=ruby&facet.query=jquery&facet.query=css&facet.query=javascript&facet.query=java&facet.query=c&facet.query=python&facet.query=interview&facet.query=homework&facet.query=examples&facet.query=tutorial&facet.query=reference',
+        url : 'http://localhost:8983/solr/files/select?q='+q+'&wt=json&facet=true&facet.query=c&facet.query=c%2B%2B&facet.query=css&facet.query=java&facet.query=javascript&facet.query=jquery&facet.query=php&facet.query=python&facet.query=ruby&facet.query=interview&facet.query=homework&facet.query=examples&facet.query=tutorial&facet.query=reference',
         type: "GET",
         dataType: "jsonp",
         jsonp : 'json.wrf',
@@ -177,16 +196,20 @@ String.prototype.capitalize = function() {
       success: function(result) {
         console.log(result);
         $("ul.nav-sidebar").empty();
+        //$("ul.languages").append("<li class='header'><a style='color:black'>Languages</a></li>");
         var facetTemplate = Handlebars.compile($("#facet-template").html());
         for(var key in result.facet_counts.facet_queries){
-          if("php jquery javascript css html java python c ruby".includes(key))
-            $("ul.languages").append(facetTemplate({facet:key,count:result.facet_counts.facet_queries[key]}));
-          else if("tutorial examples reference".includes(key))
-            $("ul.tutorials-ex-reference").append(facetTemplate({facet:key.capitalize(),count:result.facet_counts.facet_queries[key]}));
-          else if("interview" == key)
-            $("ul.interview").append(facetTemplate({facet:key.capitalize(),count:result.facet_counts.facet_queries[key]}));
-          else if("homework" == key)
-            $("ul.homework").append(facetTemplate({facet:key.capitalize(),count:result.facet_counts.facet_queries[key]}));
+          console.log(getURLParam('q'), key);
+          if(!(getURLParam('q').includes(key))){
+            if("php jquery javascript css html java python c ruby c++".includes(key))
+              $("ul.languages").append(facetTemplate({facet:key,title:key,count:result.facet_counts.facet_queries[key]}));
+            else if("tutorial examples reference".includes(key))
+              $("ul.tutorials-ex-reference").append(facetTemplate({facet:key,title:key.capitalize(),count:result.facet_counts.facet_queries[key]}));
+            else if("interview" == key)
+              $("ul.interview").append(facetTemplate({facet:key,title:key.capitalize(),count:result.facet_counts.facet_queries[key]}));
+            else if("homework" == key)
+              $("ul.homework").append(facetTemplate({facet:key,title:key.capitalize(),count:result.facet_counts.facet_queries[key]}));
+          }
         }
 
         var docs = JSON.stringify(result.highlighting);
@@ -203,6 +226,7 @@ String.prototype.capitalize = function() {
               var text;
               var highlightedContent = result.highlighting[result.response.docs[i]["id"]]["content"];
               var highlightedCode = result.highlighting[result.response.docs[i]["id"]]["attr_text_html"];
+              var highlightedDesc = result.highlighting[result.response.docs[i]["id"]]["attr_description"];
               if(highlightedContent){
                 //escape any unsafe html
                 text = highlightedContent.join('').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
@@ -218,7 +242,11 @@ String.prototype.capitalize = function() {
                 text = text.replace(/&lt;strong&gt;/g,"<strong>").replace(/&lt;\/strong&gt;/g,"</strong>");
               }
               else{
-                text = (result.highlighting[result.response.docs[i]["id"]]["content"])
+                //text = (result.highlighting[result.response.docs[i]["id"]]["content"])
+                //escape any unsafe html
+                text = highlightedDesc.join('').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+                //add back in the strong tags
+                text = text.replace(/&lt;strong&gt;/g,"<strong>").replace(/&lt;\/strong&gt;/g,"</strong>");
               }
 
               var parseURL = result.response.docs[i]["id"].split("/");

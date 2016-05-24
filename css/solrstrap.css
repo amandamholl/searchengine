@@ -16,3 +16,7 @@ html {
 .panel-body .nav-sidebar{
   margin-bottom: 0;
 }
+
+hr{
+  margin-top: 10px;
+}

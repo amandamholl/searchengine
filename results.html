@@ -40,6 +40,10 @@
     <script src="./js/liquidFillGauge.js" language="JavaScript"></script>
     <style>
         .liquidFillGaugeText { font-family: Helvetica; font-weight: bold; }
+        .nav>li.header>a:focus, .nav>li.header>a:hover {
+            text-decoration: none;
+            background-color: transparent;
+        }
     </style>
 
 
@@ -114,7 +118,7 @@
     <div class="container-fluid">
       <div class="row">
         <div class="col-sm-3 col-md-2 sidebar">
-          <div class="panel-group">
+          <!--<div class="panel-group">
           <div class="panel panel-default">
             <div class="panel-heading">
               <h4 class="panel-title">
@@ -122,14 +126,14 @@
               </h4>
             </div>
             <div id="collapse1" class="panel-collapse collapse in">
-              <div class="panel-body">
+              <div class="panel-body">-->
                 <ul class="nav nav-sidebar languages">
 
                 </ul>
-              </div>
+              <!--</div>
             </div>
           </div>
-          </div>
+          </div>-->
 
 
           <ul class="nav nav-sidebar tutorials-ex-reference">
@@ -139,13 +143,11 @@
           <ul class="nav nav-sidebar interview">
 
           </ul>
-
           <ul class="nav nav-sidebar homework">
 
           </ul>
-
           <script id="facet-template" type="text/x-handlebars-template">
-            <li><a class="facet" id="{{facet}}">{{facet}} ({{count}})</a></li>
+            <li><a class="facet" id="{{facet}}">{{title}} ({{count}})</a></li>
           </script>
 
         </div>
@@ -154,30 +156,7 @@
           <div id="rs">
             <div offset="0"></div>
           </div>
-          <!--<h1 class="page-header">Dashboard</h1>
 
-          <div class="row placeholders">
-            <div class="col-xs-6 col-sm-3 placeholder">
-              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAHd3dwAAACH5BAAAAAAALAAAAAABAAEAAAICRAEAOw==" width="200" height="200" class="img-responsive" alt="Generic placeholder thumbnail">
-              <h4>Label</h4>
-              <span class="text-muted">Something else</span>
-            </div>
-            <div class="col-xs-6 col-sm-3 placeholder">
-              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAHd3dwAAACH5BAAAAAAALAAAAAABAAEAAAICRAEAOw==" width="200" height="200" class="img-responsive" alt="Generic placeholder thumbnail">
-              <h4>Label</h4>
-              <span class="text-muted">Something else</span>
-            </div>
-            <div class="col-xs-6 col-sm-3 placeholder">
-              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAHd3dwAAACH5BAAAAAAALAAAAAABAAEAAAICRAEAOw==" width="200" height="200" class="img-responsive" alt="Generic placeholder thumbnail">
-              <h4>Label</h4>
-              <span class="text-muted">Something else</span>
-            </div>
-            <div class="col-xs-6 col-sm-3 placeholder">
-              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAHd3dwAAACH5BAAAAAAALAAAAAABAAEAAAICRAEAOw==" width="200" height="200" class="img-responsive" alt="Generic placeholder thumbnail">
-              <h4>Label</h4>
-              <span class="text-muted">Something else</span>
-            </div>
-          </div>-->
         <!--</script>-->
 
 
