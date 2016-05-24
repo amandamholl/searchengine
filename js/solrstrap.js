@@ -7,10 +7,21 @@ var HITBODY = 'text';                                          //Name of the bod
 var HITSPERPAGE = 20;
 
 
+function getURL(json,localURL) {
+  return json.filter(
+      function(json){return json.Filename == localURL}
+  );
+}
+
+String.prototype.capitalize = function() {
+    return this.charAt(0).toUpperCase() + this.slice(1);
+}
+
 
 //when the page is loaded- do this
-  $(document).ready(function() {
+  $(document).on('ready',function(event) {
     $('div[offset="0"]').loadSolrResults(getURLParam('q'), Handlebars.compile($("#hit-template").html()), Handlebars.compile($("#result-summary-template").html()), 0);
+    event.stopImmediatePropagation();
     $('#searchbox').attr('value', getURLParam('q'));
     $('#enter').attr('value', getURLParam('q'));
     $('#searchbox').focus();
@@ -19,35 +30,82 @@ var HITSPERPAGE = 20;
 //when the searchbox is typed- do this
   $('#searchbox').keyup(function() {
     if ($(this).val().length > 3) {
-
       $('div[offset="0"]').loadSolrResults($(this).val(), Handlebars.compile($("#hit-template").html()), Handlebars.compile($("#result-summary-template").html()), 0);
     }
     else {
       $('#rs').css({ opacity: 0.5 });
     }
+  });
+
+  //when a facet link is clicked, issue another query
+  $(document).on('click','a.facet',function(event){
+    event.stopImmediatePropagation();
+
+    if ($('#searchbox').val().length > 3) {
+      //strip # if this is at the end of window.location.href
+      var url = window.location.href+"+AND+"+$(this).attr('id');
+      console.log(url);
+
+      location.replace(url);
+      //$('div[offset="0"]').loadSolrResults(($('#searchbox').val()).concat($(this).attr('id')), Handlebars.compile($("#hit-template").html()), Handlebars.compile($("#result-summary-template").html()), 0);
+    }
+    else {
+      $('#rs').css({ opacity: 0.5 });
+    }
+  });
+
+  //when a link is clicked on, log it
+  //use this type of listener so it listens even after links added by handlebars
+  $(document).on('click','a.result',function(event){
+    event.stopImmediatePropagation();
+    var queries = JSON.parse(window.sessionStorage.getItem("queries"));
+
+    console.log(queries[window.sessionStorage.getItem("totalQueries") - 1]);
+    queries[window.sessionStorage.getItem("totalQueries") - 1]['clicks'].push($(this).attr('href'));
+    window.sessionStorage.setItem("queries", JSON.stringify(queries));
+    console.log(queries);
 
   });
 
   $("#searchbox").keyup(function(event){
     if(event.keyCode == 13){
-      if(window.sessionStorage.getItem("beginning")===null){
-        window.sessionStorage.setItem("beginning",Date.now());
+      if(window.sessionStorage.getItem("start")===null){
+        window.sessionStorage.setItem("start",Date());
       }
 
       if(window.sessionStorage.getItem("queries")===null){
-        window.sessionStorage.setItem("queries",getURLParam('q'));
+        window.sessionStorage.setItem("totalQueries", 1);
+        var queries = new Array();
+        queries.push({
+          query: getURLParam('q'),
+          clicks:new Array(),
+        })
+        console.log(queries);
+        //queries[window.sessionStorage.setItem("totalQueries") - 1][getURLParam('q')] = new Array();
+        window.sessionStorage.setItem("queries",JSON.stringify(queries));
       }
       else{
-        window.sessionStorage.setItem("queries",window.sessionStorage.getItem("queries")+"-"+getURLParam('q'));
+        window.sessionStorage.setItem("totalQueries", parseInt(window.sessionStorage.getItem("totalQueries"))+1);
+        var queries = JSON.parse(window.sessionStorage.getItem("queries"));
+        queries.push({
+          query: getURLParam('q'),
+          clicks:new Array(),
+        })
+        console.log(queries);
+        //queries[window.sessionStorage.setItem("totalQueries") - 1][getURLParam('q')] = new Array();
+        window.sessionStorage.setItem("queries",JSON.stringify(queries));
       }
-
-      console.log(window.sessionStorage);
     }
+    //console.log(window.sessionStorage.getItem("clicks") );
   });
 
   $("#end").click(function(){
-    window.sessionStorage.setItem("end",Date.now());
+    window.sessionStorage.setItem("end",Date());
     console.log(window.sessionStorage);
+    //begin building session data to log
+    var url = 'data:text/json;charset=utf8,' + encodeURIComponent(JSON.stringify(window.sessionStorage));
+    window.open(url, '_blank');
+    window.focus();
     window.sessionStorage.clear();
   });
 
@@ -94,28 +152,43 @@ var HITSPERPAGE = 20;
   (function( $ ){
     $.fn.getSolrResults = function(q, hitTemplate, summaryTemplate, offset) {
       var rs = this;
-      console.log(q);
+      console.log('here');
       $(rs).parent().css({ opacity: 0.5 });
-      $.ajaxSetup({ crossDomain: true, scriptCharset: "utf-8" , contentType: "jsonp; charset=utf-8"});
       $.ajax({
-        url : 'http://localhost:8983/solr/files/select',
+        url : 'http://localhost:8983/solr/files/select?q='+q+'&wt=json&facet=true&facet.query=php&facet.query=ruby&facet.query=jquery&facet.query=css&facet.query=javascript&facet.query=java&facet.query=c&facet.query=python&facet.query=interview&facet.query=homework&facet.query=examples&facet.query=tutorial&facet.query=reference',
         type: "GET",
         dataType: "jsonp",
         jsonp : 'json.wrf',
         //jsonpCallback: "callback",
         data:{
-          q:q,
-          wt:"json",
+          //q:q,
+          //wt:"json",
+          //fl:"content, title,id",
           hl:true,
           'hl.snippets':5,
           'hl.fl':"*",
           'hl.usePhraseHighlighter':true,
+          'start': offset,
 
           //&hl.snippets=20&hl.fl=content&hl.usePhraseHighlighter=true
           //http://localhost:8983/solr/techproducts/select?q=inStock:false&wt=json&fl=id,name
-        },
+
+      },
       success: function(result) {
-        console.log(result.highlighting);
+        console.log(result);
+        $("ul.nav-sidebar").empty();
+        var facetTemplate = Handlebars.compile($("#facet-template").html());
+        for(var key in result.facet_counts.facet_queries){
+          if("php jquery javascript css html java python c ruby".includes(key))
+            $("ul.languages").append(facetTemplate({facet:key,count:result.facet_counts.facet_queries[key]}));
+          else if("tutorial examples reference".includes(key))
+            $("ul.tutorials-ex-reference").append(facetTemplate({facet:key.capitalize(),count:result.facet_counts.facet_queries[key]}));
+          else if("interview" == key)
+            $("ul.interview").append(facetTemplate({facet:key.capitalize(),count:result.facet_counts.facet_queries[key]}));
+          else if("homework" == key)
+            $("ul.homework").append(facetTemplate({facet:key.capitalize(),count:result.facet_counts.facet_queries[key]}));
+        }
+
         var docs = JSON.stringify(result.highlighting);
         var jsonData = JSON.parse(docs);
         if (result.response.docs.length > 0) {
@@ -124,10 +197,56 @@ var HITSPERPAGE = 20;
             rs.append(summaryTemplate({totalresults: result.response.numFound, query: q}));
             rs.siblings().remove();
           }
-          for (var i = 0; i < result.response.docs.length; i++) {
-            //console.log(result.response.docs[i]["id"]);
-            rs.append(hitTemplate({id: result.response.docs[i]["id"],title: result.response.docs[i]["title"], text: (result.highlighting[result.response.docs[0]["id"]]["content"]).join('')}));
-          }
+          $.getJSON("./File_URL_Pairs.json", function(json) {
+            for (var i = 0; i < result.response.docs.length; i++) {
+              //console.log(result.response.docs[i]["id"]);
+              var text;
+              var highlightedContent = result.highlighting[result.response.docs[i]["id"]]["content"];
+              var highlightedCode = result.highlighting[result.response.docs[i]["id"]]["attr_text_html"];
+              if(highlightedContent){
+                //escape any unsafe html
+                text = highlightedContent.join('').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+                //add back in the strong tags
+                text = text.replace(/&lt;strong&gt;/g,"<strong>").replace(/&lt;\/strong&gt;/g,"</strong>");
+              }
+              else if(!highlightedContent && highlightedCode){
+                console.log(highlightedCode);
+                //merge but then remove html characters so its rendered as a string and not html code
+                //remove any unsafe html(escape the string)
+                text = highlightedCode.join('').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+                //add back in the strong tags
+                text = text.replace(/&lt;strong&gt;/g,"<strong>").replace(/&lt;\/strong&gt;/g,"</strong>");
+              }
+              else{
+                text = (result.highlighting[result.response.docs[i]["id"]]["content"])
+              }
+
+              var parseURL = result.response.docs[i]["id"].split("/");
+              var found = getURL(json,parseURL[parseURL.length-1]);
+              //console.log(parseURL[parseURL.length-1].replace('.','').replace('.','').replace('.',''));
+              var id = parseURL[parseURL.length-1].replace('.','').replace('.','').replace('.','');
+              rs.append(hitTemplate({id:id,url:found[0].URL,title: result.response.docs[i]["title"], text: text}));
+
+              var config = liquidFillGaugeDefaultSettings();
+              config.textVertPosition = 0.8;
+              //config.waveAnimateTime = 5000;
+              config.waveHeight = 0;
+              //config.waveAnimate = false;
+              //config.waveOffset = 0.25;
+              config.valueCountUp = false;
+              config.displayPercent = false;
+              if(result.response.docs[i]["attr_text_html"]){
+                var code = 0;
+                for(var j=0; j < result.response.docs[i]["attr_text_html"].length; j++){
+                  code += result.response.docs[i]["attr_text_html"][j].length;
+                }
+              }
+              else {
+                var code = 0;
+              }
+              var gauge1 = loadLiquidFillGauge(id, (code/(code+result.response.docs[i]["content"].length)) * 100, config);
+            }
+          }).error(function(error){console.log(error);});
           $(rs).parent().css({ opacity: 1 });
           //if more results to come- set up the autoload div
           if ((+HITSPERPAGE+offset) < +result.response.numFound) {
@@ -141,35 +260,6 @@ var HITSPERPAGE = 20;
       error: function(result) { console.log("Error"); },
 
       });
-
-      /*$.getJSON(SERVERROOT + "?json.wrf=?",
-        {
-          'rows': HITSPERPAGE,
-          'wt': 'json',
-          'q': q,
-          'start': offset
-        },
-        function(result){
-          console.log(result);
-          if (result.response.docs.length > 0) {
-            if (offset == 0) {
-              rs.empty();
-              rs.append(summaryTemplate({totalresults: result.response.numFound, query: q}));
-              rs.siblings().remove();
-            }
-            for (var i = 0; i < result.response.docs.length; i++) {
-              rs.append(hitTemplate({title: result.response.docs[i][HITTITLE], text: result.response.docs[i][HITBODY]}));
-            }
-            $(rs).parent().css({ opacity: 1 });
-            //if more results to come- set up the autoload div
-            if ((+HITSPERPAGE+offset) < +result.response.numFound) {
-              var nextDiv = document.createElement('div');
-              $(nextDiv).attr('offset', +HITSPERPAGE+offset);
-              rs.parent().append(nextDiv);
-              $(nextDiv).loadSolrResultsWhenVisible(q, hitTemplate, summaryTemplate, +HITSPERPAGE+offset);
-            }
-          }
-        });*/
     };
   })( jQuery );
 

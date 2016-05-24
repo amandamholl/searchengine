@@ -1,4 +1,18 @@
-body {padding-top: 60px;}
-#search-form {margin:0px;}
-#result-summary{margin-bottom:20px;}
-html { overflow-y: scroll; } /*force scrollbar*/
+body {
+  padding-top: 60px;
+}
+#search-form {
+  margin:0px;
+}
+#result-summary{
+  margin-bottom:20px;
+}
+html {
+  overflow-y: scroll;
+} /*force scrollbar*/
+.entry{
+  margin-bottom: 10px;
+}
+.panel-body .nav-sidebar{
+  margin-bottom: 0;
+}
