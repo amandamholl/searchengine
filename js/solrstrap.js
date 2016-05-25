@@ -196,8 +196,11 @@ var HITSPERPAGE = 20;
       var rs = this;
       console.log('here');
       $(rs).parent().css({ opacity: 0.5 });
+      //make sure query is escaped so solr doesn't throw error (like with .find() or c++)
+      var specials = ['+', '-', '&', '!', '(', ')', '{', '}', '[', ']', '^', '"', '~', '*', '?', ':', '\\'];
+      var regexp = new RegExp("(\\" + specials.join("|\\") + ")", "g");
       $.ajax({
-        url : 'http://localhost:8983/solr/files/select?q='+q+'&wt=json&facet=true&facet.query=c&facet.query=c%2B%2B&facet.query=html&facet.query=java&facet.query=javascript&facet.query=jquery&facet.query=php&facet.query=python&facet.query=ruby&facet.query=interview&facet.query=homework&facet.query=examples&facet.query=tutorial&facet.query=reference',
+        url : 'http://localhost:8983/solr/files/select?q='+(q.replace(regexp, "\\$1"))+'&wt=json&facet=true&facet.query=c&facet.query=c%2B%2B&facet.query=html&facet.query=java&facet.query=javascript&facet.query=jquery&facet.query=php&facet.query=python&facet.query=ruby&facet.query=interview&facet.query=homework&facet.query=examples&facet.query=tutorial&facet.query=reference',
         type: "GET",
         dataType: "jsonp",
         jsonp : 'json.wrf',
@@ -211,6 +214,7 @@ var HITSPERPAGE = 20;
           'hl.fl':"*",
           'hl.usePhraseHighlighter':true,
           'start': offset,
+          fl: '*,score',
 
           //&hl.snippets=20&hl.fl=content&hl.usePhraseHighlighter=true
           //http://localhost:8983/solr/techproducts/select?q=inStock:false&wt=json&fl=id,name
