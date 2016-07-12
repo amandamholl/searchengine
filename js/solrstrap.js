@@ -282,7 +282,7 @@ var HITSPERPAGE = 20;
 
               var parseURL = result.response.docs[i]["id"].split("/");
               var found = getURL(json,parseURL[parseURL.length-1]);
-              //console.log(parseURL[parseURL.length-1].replace('.','').replace('.','').replace('.',''));
+              console.log(found);
               var id = parseURL[parseURL.length-1].replace('.','').replace('.','').replace('.','');
               rs.append(hitTemplate({id:id,url:found[0].URL,title: result.response.docs[i]["title"], text: text}));
 

@@ -54,10 +54,15 @@
 
           <div class="inner cover">
             <h1 class="cover-heading">A Search Engine for Coders</h1>
-            <p class="lead">Enter a query on the next page and press the Enter key to begin searching</p>
+            <!--<p class="lead">Enter a query on the next page and press the Enter key to begin searching</p>-->
+            <p class="lead">Enter a query to begin searching</p>
+            <form style="margin-bottom:20px;">
+              <input type="text" class="form-control search-query span6" placeholder="Search..." onfocus="this.value = this.value;" id="searchbox" name="q">
+            </form>
             <p class="lead">
-              <a href="./results.html" id="start" class="btn btn-lg btn-default">Start!</a>
+              <a href="#" id="start" class="btn btn-lg btn-default">Start searching!</a>
             </p>
+
           </div>
 
           <div class="mastfoot">
@@ -80,6 +85,11 @@
     <script>window.jQuery || document.write('<script src="./js/jquery.min.js"><\/script>')</script>
     <script src="./js/bootstrap.min.js"></script>
     <script type='text/javascript' src="./js/solrstrap.js"></script>
+    <script>
+      $("#start").click(function() {
+        location.replace("./results.html?q="+$("#searchbox").val());
+      });
+    </script>
     <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
     <script src="./js/ie10-viewport-bug-workaround.js"></script>
 
