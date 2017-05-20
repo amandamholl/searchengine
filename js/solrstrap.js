@@ -288,10 +288,7 @@ var HITSPERPAGE = 20;
 
               var config = liquidFillGaugeDefaultSettings();
               config.textVertPosition = 0.8;
-              //config.waveAnimateTime = 5000;
               config.waveHeight = 0;
-              //config.waveAnimate = false;
-              //config.waveOffset = 0.25;
               config.valueCountUp = false;
               config.displayPercent = false;
               if(result.response.docs[i]["attr_text_html"]){
